@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mkdocs-demo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mkdocs-demo-app
+  template:
+    metadata:
+      labels:
+        app: mkdocs-demo-app
+      
+    spec:
+      containers:
+      - name: mkdocs-demo-container
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        ports:
+        - containerPort: 80

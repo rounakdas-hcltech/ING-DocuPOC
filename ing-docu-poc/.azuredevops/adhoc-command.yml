@@ -1,0 +1,41 @@
+trigger: none
+
+parameters:
+# - name: environment_type
+#   displayName: Target environment
+#   type: string
+#   default: "testae"
+#   values:
+#   - testae
+#   - accpae
+#   - prodae
+
+- name: commands
+  displayName: Commands to run (list)
+  type: object
+  default: ["echo \"Hello World\""]
+
+# variables:
+# - template: variables/common.yml
+# - template: variables/${{ parameters.environment_type }}.yml
+
+jobs:
+- job: run_adhoc_commands
+  displayName: Execute adhoc commands in DNA-Day0-Chapters
+  pool:
+    vmimage: 'ubuntu-latest'
+  cancelTimeoutInMinutes: 2
+  steps:
+  - ${{ each command in parameters.commands }}:
+    - task: AzureCLI@2
+      displayName: ${{ command }}
+      continueOnError: false
+      inputs:
+        azureSubscription: ing-docu-poc-sc
+        scriptType: 'bash'
+        addSpnToEnvironment: true
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -eo pipefail
+          az account set --subscription 2e2f7154-113f-431f-a946-f49f89fb845e
+          ${{ command }}

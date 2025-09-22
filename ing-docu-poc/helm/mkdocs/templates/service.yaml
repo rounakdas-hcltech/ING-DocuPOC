@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mkdocs-demo-service
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 80
+  selector:
+    app: mkdocs-demo-app
+

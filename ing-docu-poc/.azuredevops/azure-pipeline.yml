@@ -1,0 +1,98 @@
+#ING MKDocs demo app deployment pipeline
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  # vmimage: 'Hosted Agent'
+  name: 'Default'
+  vmimage: 'ing-docu-jumpbox'
+
+variables:
+  azureSubscription: ing-docu-poc-svc
+  #DNA-Day0-Chapters
+  acrName: ingdocacr
+  acrLoginServer: ingdocacr.azurecr.io
+  resourceGroup: ING-Australia
+  aksClusterName: aks-ing-docu-poc
+  repoName: ing
+  imageName: ingdocupoc
+  imageTag: $(Build.BuildId)
+  namespace: ing-mkdocs
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuidAndPush
+    steps:
+    - task: AzureCLI@2
+      displayName: Build and push image to ACR using AzureRM
+      inputs:
+        azureSubscription: $(azureSubscription)  # AzureRM service connection name
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          IMAGE_TAG=$(Build.BuildId)
+          echo "Login to ACR ${{ variables.acrName }}"
+          az acr login --name ${{ variables.acrName }}
+          echo "Loggged in to ACR ${{ variables.acrName }}"
+          pwd
+          # Get ACR login server
+          #ACR_LOGIN_SERVER=$(az acr show --name ${{ variables.acrName }} --query "loginServer" -o tsv)
+          # docker run --rm busybox nslookup ingdocacr.azurecr.io
+          # Build the image
+          docker build -t ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:$IMAGE_TAG -t ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:latest .
+    
+          # Push to ACR
+          docker push ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:$IMAGE_TAG
+          docker push ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:latest
+          # docker push 10.144.44.6/$(imageName):$IMAGE_TAG
+          # docker push 10.144.44.6/$(imageName):latest
+
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - job: DeployToAKS
+    pool:
+      # vmimage: 'Hosted Agent'
+      name: 'Default'
+      vmimage: 'ing-docu-jumpbox'
+    steps: 
+    - task: AzureCLI@2
+      displayName: Deploy Helm Chart to AKS
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          RESOURCE_GROUP=${{ variables.resourceGroup }}
+          CLUSTER_NAME=${{ variables.aksClusterName }}
+          ACR_SERVER=${{ variables.acrLoginServer }}
+          IMAGE_TAG=${{ variables.imageTag }}
+          IMAGE_NAME=${{ variables.imageName }}
+
+          echo "Get AKS credentials"
+          az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
+
+          kubelogin convert-kubeconfig -l azurecli
+
+
+          # echo "Ensure helm is installed"
+          # helm version 
+          # # echo "Image tag: ${{ variables.imageTag }}"
+          # # sed -i -e "s/tag:.*/tag: ${{ variables.imageTag }}/" ./helm/mkdocs/values.yaml
+          # echo "-----"
+          # cat ./helm/mkdocs/values.yaml
+          # echo "-----" 
+          # Dry Run
+          # kubectl create configmap mkdocs-demo-app --from-file=docs/ --dry-run=client -o yaml | kubectl apply -f -
+          echo "Deploy with Helm"
+          helm upgrade --install mkdocs-demo-release ./helm/mkdocs -n ing-mkdocs -f ./helm/mkdocs/values.yaml 
+          # sleep 10
+          kubectl scale deployment mkdocs-demo-app -n ${{ variables.namespace }} --replicas=0
+          # sleep 10
+          kubectl scale deployment mkdocs-demo-app -n ${{ variables.namespace }} --replicas=1
+          echo "Deployment completed successfully"
+        

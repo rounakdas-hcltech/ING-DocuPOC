@@ -1,0 +1,66 @@
+site_name: Docs-As-Code - Demo
+
+nav:
+ - Welcome: index.md
+ - The Concept Demo: about.md
+ - The Concept - Target: about_ext.md
+ - Onboarding Studio:
+   - The Studio: somepage.md
+   - CJE Trail:
+      - CJE Master: someotherpage_cje_master.md
+   - Middleware Engineer Trail:
+      - MW Trail:
+        - MW Week 1:
+            - MW Day 1: mw_day1.md
+            - MW Day 2: mw_day2.md
+        - MW Week 2:
+            - MW Day 1: mw_day1.md
+            - MW Day 2: mw_day2.md
+   - DevTest Engineer Trail:
+      - DT Master: someotherpage_dt.md
+   - Delivery Lead Trail:
+      - DL Master: someotherpage_dl.md
+ - Enterprise Info:
+   - Info Guide: somepage2.md
+   - Middleware World:
+      - MW Ecosystem: someotherpage2.md
+      - MW DirectGateWay: mw_dg.md
+      - MW MCG: mw_mcg.md
+   - Data World:
+     - Data Ecosystem: someotherpage3.md
+ - How To: config_example.md
+ - ING AU Onboarding (Pilot):
+    - HCLTech-ING Engagement: engagement.md
+    - Day-Wise Plan:
+        - Day 1: 
+            - Agenda: agenda_day1.md
+            - ING Australia: about_ing_au.md
+        - Day 2: 
+            - Agenda: agenda_day2.md
+            - Build Your Scrum: day1_build_your_scrum.md
+        - Day 3: 
+            - Agenda: agenda_day3.md
+            - Scenario Scanning: day1_scenario_scan.md
+#    - ING Birds Eye View: birdseyeview.md
+    - ING Working Env: ingworkingenv.md
+
+
+theme: 
+    name: material
+    language: en # l- navigation.footeranguage of the site
+    features:
+        - header.autohide
+        - navigation.tracking
+        - navigation.path
+        - toc.follow
+        
+        
+markdown_extensions:
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  
+plugins:
+  - mkdocs-pdf
+ 

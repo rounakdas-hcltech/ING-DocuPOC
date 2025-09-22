@@ -1,0 +1,8 @@
+image: 
+  repository: ingdocacr.azurecr.io/ing/ingdocupoc
+  tag: latest
+  pullPolicy: Always  
+
+service:
+  type: LoadBalancer
+  targetPort: 80
