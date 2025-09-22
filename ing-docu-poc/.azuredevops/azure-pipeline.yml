@@ -4,6 +4,11 @@ trigger:
   branches:
     include:
       - main
+  paths:
+    include:
+      - ing-docu-poc/**
+      - ing-docu-poc-team1/**
+      - ing-docu-poc-team2/**
 
 pool:
   # vmimage: 'Hosted Agent'
@@ -38,12 +43,16 @@ stages:
           echo "Login to ACR ${{ variables.acrName }}"
           az acr login --name ${{ variables.acrName }}
           echo "Loggged in to ACR ${{ variables.acrName }}"
-          pwd
+          echo "Repository root: $(pwd)"
           # Get ACR login server
           #ACR_LOGIN_SERVER=$(az acr show --name ${{ variables.acrName }} --query "loginServer" -o tsv)
           # docker run --rm busybox nslookup ingdocacr.azurecr.io
           # Build the image
-          docker build -t ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:$IMAGE_TAG -t ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:latest .
+          docker build \
+            -f ing-docu-poc/Dockerfile \
+            -t ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:$IMAGE_TAG \
+            -t ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:latest \
+            .
     
           # Push to ACR
           docker push ${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }}:$IMAGE_TAG
@@ -89,7 +98,9 @@ stages:
           # Dry Run
           # kubectl create configmap mkdocs-demo-app --from-file=docs/ --dry-run=client -o yaml | kubectl apply -f -
           echo "Deploy with Helm"
-          helm upgrade --install mkdocs-demo-release ./helm/mkdocs -n ing-mkdocs -f ./helm/mkdocs/values.yaml 
+          helm upgrade --install mkdocs-demo-release ./helm/mkdocs -n ing-mkdocs -f ./helm/mkdocs/values.yaml \
+            --set image.repository=${{ variables.acrLoginServer }}/${{ variables.repoName }}/${{ variables.imageName }} \
+            --set image.tag=${IMAGE_TAG}
           # sleep 10
           kubectl scale deployment mkdocs-demo-app -n ${{ variables.namespace }} --replicas=0
           # sleep 10
